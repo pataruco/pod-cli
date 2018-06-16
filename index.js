@@ -1,17 +1,18 @@
 #!/usr/bin/env node
-
+const fs = require('fs');
 const program = require('commander');
+const isImage = require('is-image');
 
-program
-  .arguments('<file>')
-  .option('-u, --username <username>', 'The user to authenticate as')
-  .option('-p, --password <password>', "The user's password")
-  .action(function(file) {
-    console.log(
-      'user: %s pass: %s file: %s',
-      program.username,
-      program.password,
-      file,
-    );
-  })
-  .parse(process.argv);
+const getFiles = path => {
+  return fs.readdirSync(path).filter(file => isImage(file));
+};
+
+const addFolder = async path => {
+  const images = await getFiles(path);
+};
+
+program.command('add-folder <dir>').action(dir => {
+  addFolder(dir);
+});
+
+// program.parse(process.argv);

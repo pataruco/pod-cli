@@ -6,7 +6,8 @@
   "author": "Pedro Martin <pataruco@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "commander": "^2.15.1"
+    "commander": "^2.15.1",
+    "is-image": "^2.0.0"
   },
   "preferGlobal": true,
   "bin": {
