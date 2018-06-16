@@ -3,33 +3,52 @@ const fs = require('fs');
 const program = require('commander');
 const isImage = require('is-image');
 const ExifImage = require('exif').ExifImage;
+const { DateTime } = require('luxon');
 
-const getExif = image => {
+const getDatePictureTaken = image => {
   try {
-    new ExifImage({ image }, function(error, exifData) {
-      if (error) console.log('Error: ' + error.message);
-      else console.log(exifData); // Do something with your data!
+    new ExifImage({ image }, async (e, exifData) => {
+      const datePictureTaken = await exifData.exif.DateTimeOriginal;
+      const dateArray = datePictureTaken.split(' ')[0].split(':');
+      const timeArray = datePictureTaken.split(' ')[1].split(':');
+
+      const date = awaitDateTime.local(
+        parseInt(dateArray[0], 10),
+        parseInt(dateArray[1], 10),
+        parseInt(dateArray[2], 10),
+        parseInt(timeArray[0], 10),
+        parseInt(timeArray[1], 10),
+        parseInt(timeArray[2], 10),
+      );
+      console.log(date);
+      return date;
     });
-  } catch (error) {
-    console.log('Error: ' + error.message);
+  } catch (e) {
+    console.error(error.message);
   }
 };
 
 const getFiles = path => {
-  fs.readdirSync(path).forEach(file => {
+  return fs.readdirSync(path).map(file => {
     if (isImage(file)) {
-      const filepath = `${path}/${file}`;
-      getExif(filepath);
+      return `${path}/${file}`;
     }
   });
-  // return fs.readdirSync(path).filter(file => isImage(file));
+};
+
+const renameImagefilenames = async images => {
+  const dates = [];
+  for (const image of images) {
+    const datePictureTaken = await getDatePictureTaken(image);
+    // check why this is not returning
+    console.log(datePictureTaken);
+  }
 };
 
 const addFolder = async path => {
   const images = await getFiles(path);
-  for (const image of images) {
-    getExif(image);
-  }
+
+  renameImagefilenames(images);
 };
 
 program.command('add-folder <dir>').action(dir => {
