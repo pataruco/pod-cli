@@ -8,6 +8,7 @@
   "dependencies": {
     "commander": "^2.15.1"
   },
+  "preferGlobal": true,
   "bin": {
     "pod": "index.js"
   }
