@@ -2,6 +2,7 @@ const fs = require('fs');
 const isImage = require('is-image');
 const { ExifImage } = require('exif');
 const { DateTime } = require('luxon');
+const sharp = require('sharp');
 
 const getDatePictureTaken = image => {
   return new Promise((resolve, reject) => {
@@ -38,17 +39,17 @@ const getFiles = path => {
 
 let dates = [];
 let counter = 1;
-const getNewFileName = (path, date, fileExtension) => {
+const getNewFileName = (date, fileExtension) => {
   const dateString = `${date.year}-${date.month}-${date.day}`;
 
   if (dates.includes(dateString)) {
     counter++;
-    return `${path}/${dateString}_${counter}.${fileExtension}`;
+    return `${dateString}_${counter}.${fileExtension}`;
   } else {
     counter = 1;
     dates = [];
     dates.push(dateString);
-    return `${path}/${dateString}_${counter}.${fileExtension}`;
+    return `${dateString}_${counter}.${fileExtension}`;
   }
 };
 
@@ -57,19 +58,42 @@ const getfileExtension = fileString => {
   return fileString.substring(indexStart);
 };
 
+const createUploadFolder = path => {
+  const newFolder = `${path}/upload`;
+  if (!fs.existsSync(newFolder)) {
+    fs.mkdirSync(newFolder);
+  }
+};
+
+const optimiseImage = (path, imageFullPath, image) => {
+  const newFile = `${path}/upload/${image}`;
+  createUploadFolder(path);
+
+  sharp(imageFullPath)
+    .rotate()
+    .withMetadata()
+    .resize(800)
+    .toFile(newFile, (error, info) => {
+      !error ? console.log(info) : console.error(error);
+    });
+};
+
 const renameImagefilenames = async (path, images) => {
   for (const image of images) {
     const DateTimeOriginal = await getDatePictureTaken(image);
     const date = getDate(DateTimeOriginal);
     const fileExtension = getfileExtension(image);
-    newFileName = getNewFileName(path, date, fileExtension);
-    fs.renameSync(image, newFileName);
+    newFileName = getNewFileName(date, fileExtension);
+    const newPathFileName = `${path}/${newFileName}`;
+    fs.renameSync(image, newPathFileName);
+    optimiseImage(path, newPathFileName, newFileName);
   }
 };
 
-const addFolder = path => {
+const addFolder = async path => {
   const images = getFiles(path);
-  renameImagefilenames(path, images);
+  await renameImagefilenames(path, images);
+  // console.log('-------------------------Done');
 };
 
 module.exports = { addFolder };
