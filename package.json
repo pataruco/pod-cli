@@ -6,6 +6,7 @@
   "author": "Pedro Martin <pataruco@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "aws-sdk": "^2.259.1",
     "commander": "^2.15.1",
     "exif": "^0.6.0",
     "is-image": "^2.0.0",

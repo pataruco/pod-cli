@@ -1,8 +1,17 @@
+const AWS = require('aws-sdk');
 const fs = require('fs');
 const isImage = require('is-image');
 const { ExifImage } = require('exif');
 const { DateTime } = require('luxon');
 const sharp = require('sharp');
+const { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_NAME } = process.env;
+
+AWS.config.update({
+  accessKeyId: AWS_ACCESS_KEY_ID,
+  secretAccessKey: AWS_SECRET_ACCESS_KEY,
+});
+
+const s3 = new AWS.S3();
 
 const getDatePictureTaken = image => {
   return new Promise((resolve, reject) => {
@@ -65,17 +74,54 @@ const createUploadFolder = path => {
   }
 };
 
+const getUploadPath = path => {
+  return `${path}/upload`;
+};
+
 const optimiseImage = (path, imageFullPath, image) => {
-  const newFile = `${path}/upload/${image}`;
+  const uploadPath = getUploadPath(path);
+  const newFile = `${uploadPath}/${image}`;
   createUploadFolder(path);
 
-  sharp(imageFullPath)
+  return sharp(imageFullPath)
     .rotate()
     .withMetadata()
     .resize(800)
-    .toFile(newFile, (error, info) => {
-      !error ? console.log(info) : console.error(error);
+    .toFile(newFile)
+    .then(info => console.log(info))
+    .catch(err => console.error(err));
+};
+
+const uploadImage = image => {
+  const fileName = image.split('/').pop();
+
+  fs.readFile(image, (err, data) => {
+    if (err) {
+      throw err;
+    }
+    const base64data = new Buffer.from(data, 'binary');
+    const params = {
+      Bucket: `${BUCKET_NAME}/test`,
+      Key: fileName,
+      Body: base64data,
+      ACL: 'public-read',
+    };
+
+    s3.upload(params, (error, data) => {
+      error
+        ? console.log(error)
+        : console.log(data, 'Successfully uploaded package.');
     });
+  });
+};
+
+const uploadImages = async path => {
+  const uploadPath = getUploadPath(path);
+  const images = getFiles(uploadPath);
+  for (const image of images) {
+    uploadImage(image);
+  }
+  //todo: logger
 };
 
 const renameImagefilenames = async (path, images) => {
@@ -86,14 +132,14 @@ const renameImagefilenames = async (path, images) => {
     newFileName = getNewFileName(date, fileExtension);
     const newPathFileName = `${path}/${newFileName}`;
     fs.renameSync(image, newPathFileName);
-    optimiseImage(path, newPathFileName, newFileName);
+    await optimiseImage(path, newPathFileName, newFileName);
   }
+  uploadImages(path);
 };
 
 const addFolder = async path => {
   const images = getFiles(path);
-  await renameImagefilenames(path, images);
-  // console.log('-------------------------Done');
+  renameImagefilenames(path, images);
 };
 
 module.exports = { addFolder };
