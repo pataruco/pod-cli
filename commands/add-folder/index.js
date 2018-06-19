@@ -27,11 +27,10 @@ const getDatePictureTaken = async image => {
 };
 
 const getFiles = path => {
-  return fs.readdirSync(path).map(file => {
-    if (isImage(file)) {
-      return `${path}/${file}`;
-    }
-  });
+  return fs
+    .readdirSync(path)
+    .filter(file => isImage(file))
+    .map(file => `${path}/${file}`);
 };
 
 const renameImagefilenames = async images => {
@@ -72,8 +71,7 @@ const renameImagefilenames = async images => {
 
 const addFolder = async path => {
   const images = await getFiles(path);
-
-  renameImagefilenames(images);
+  console.log(images);
 };
 
 module.exports = { addFolder };
