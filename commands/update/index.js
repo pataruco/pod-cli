@@ -62,15 +62,16 @@ const createObject = async list => {
     const dateString = getDateString(url);
 
     if (datesArray.includes(dateString)) {
+      const index = manifest.dates.findIndex(item => item.date === dateString);
+      manifest.dates[index].files.push({ url });
     } else {
       const newDate = {
         date: dateString,
-        files: [url],
+        files: [{ url }],
       };
       manifest.dates.push(newDate);
       datesArray.push(dateString);
     }
-    console.log(manifest.dates[0]);
   }
 };
 
