@@ -127,6 +127,24 @@ const uploadImage = image => {
   });
 };
 
+const deleteFolder = path => {
+  return new Promise(resolve => {
+    const success = () => {
+      if (fs.existsSync(path)) {
+        fs.readdirSync(path).forEach(file => {
+          const curPath = path + '/' + file;
+          fs.lstatSync(curPath).isDirectory()
+            ? deleteFolder(curPath)
+            : fs.unlinkSync(curPath);
+        });
+        fs.rmdirSync(path);
+        log.message(`Deleting ${path}`);
+      }
+    };
+    resolve(success());
+  });
+};
+
 const uploadImages = async path => {
   const uploadPath = getUploadPath(path);
   const images = getFiles(uploadPath);
@@ -137,6 +155,7 @@ const uploadImages = async path => {
     counter++;
     log.message(`${counter}/${images.length} images uploaded`);
   }
+  await deleteFolder(path);
   log.success(`Process finished`);
 };
 
