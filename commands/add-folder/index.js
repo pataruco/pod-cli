@@ -4,12 +4,16 @@ const isImage = require('is-image');
 const { ExifImage } = require('exif');
 const { DateTime } = require('luxon');
 const sharp = require('sharp');
-const { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_NAME } = process.env;
+const {
+  POD_AWS_ACCESS_KEY_ID,
+  POD_AWS_SECRET_ACCESS_KEY,
+  POD_BUCKET_NAME,
+} = process.env;
 const log = require('../../lib/logger');
 
 AWS.config.update({
-  accessKeyId: AWS_ACCESS_KEY_ID,
-  secretAccessKey: AWS_SECRET_ACCESS_KEY,
+  accessKeyId: POD_AWS_ACCESS_KEY_ID,
+  secretAccessKey: POD_AWS_SECRET_ACCESS_KEY,
 });
 
 const s3 = new AWS.S3();
@@ -106,7 +110,7 @@ const uploadImage = image => {
 
       const base64data = new Buffer.from(data, 'binary');
       const params = {
-        Bucket: `${BUCKET_NAME}/test`,
+        Bucket: `${POD_BUCKET_NAME}/local`,
         Key: fileName,
         Body: base64data,
         ACL: 'public-read',
