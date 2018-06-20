@@ -13,6 +13,9 @@ AWS.config.update({
   secretAccessKey: POD_AWS_SECRET_ACCESS_KEY,
 });
 
+const MANIFEST = 'manifest.json';
+const MANIFEST_PATH = `./data/${MANIFEST}`;
+
 const dateregex = /([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))/gm;
 
 const s3 = new AWS.S3();
@@ -83,18 +86,51 @@ const createObject = async list => {
 const createFileFrom = object => {
   const json = JSON.stringify(object);
 
-  fs.writeFile('./data/manifest.json', json, error => {
-    if (error) {
-      return console.error(error);
-    }
-    console.log('The file was saved!');
+  return new Promise((resolve, reject) => {
+    fs.writeFile(MANIFEST_PATH, json, error => {
+      if (error) {
+        reject(console.error(error));
+      }
+      resolve(console.log('The file was saved!'));
+    });
+  });
+};
+
+const uploadManifest = () => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(MANIFEST_PATH, (err, data) => {
+      if (err) {
+        console.error(error);
+      }
+
+      const base64data = new Buffer.from(data, 'binary');
+      const params = {
+        Bucket: `${POD_BUCKET_NAME}/local/manifest`,
+        Key: MANIFEST,
+        Body: base64data,
+        ACL: 'public-read',
+      };
+
+      s3.upload(params, (error, data) => {
+        if (error) {
+          reject(console.error(error));
+        }
+
+        const success = () => {
+          console.log(data);
+          console.log(`${MANIFEST} uploaded`);
+        };
+        resolve(success());
+      });
+    });
   });
 };
 
 const update = async () => {
   const list = await getFileList();
   const object = await createObject(list);
-  createFileFrom(object);
+  await createFileFrom(object);
+  uploadManifest();
 };
 
 module.exports = { update };
