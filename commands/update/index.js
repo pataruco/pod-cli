@@ -1,6 +1,7 @@
 const AWS = require('aws-sdk');
-var { DateTime } = require('luxon');
 const fs = require('fs');
+const log = require('../../lib/logger');
+var { DateTime } = require('luxon');
 
 const {
   POD_AWS_ACCESS_KEY_ID,
@@ -46,6 +47,7 @@ function getFileList() {
         contents.forEach(content => {
           allKeys.push(content.Key);
         });
+        log.success('Retrieve all files from S3');
         return allKeys;
       };
       resolve(success());
@@ -62,9 +64,10 @@ const createObject = async list => {
     const manifest = { updated: DateTime.local().toString(), dates: [] };
     const datesArray = [];
 
+    let counter = 0;
     for (const url of list) {
       const dateString = getDateString(url);
-
+      log.message(`Processing file from date ${dateString}`);
       if (datesArray.includes(dateString)) {
         const index = manifest.dates.findIndex(
           item => item.date === dateString,
@@ -78,12 +81,15 @@ const createObject = async list => {
         manifest.dates.push(newDate);
         datesArray.push(dateString);
       }
+      counter++;
+      log.success(`${counter}/${list.length} files processed`);
     }
     resolve(manifest);
   });
 };
 
 const createFileFrom = object => {
+  log.message('Creating file to upload');
   const json = JSON.stringify(object);
 
   return new Promise((resolve, reject) => {
@@ -91,7 +97,7 @@ const createFileFrom = object => {
       if (error) {
         reject(console.error(error));
       }
-      resolve(console.log('The file was saved!'));
+      resolve(log.success('The file was saved!'));
     });
   });
 };
@@ -105,7 +111,7 @@ const uploadManifest = () => {
 
       const base64data = new Buffer.from(data, 'binary');
       const params = {
-        Bucket: `${POD_BUCKET_NAME}/local/manifest`,
+        Bucket: `${POD_BUCKET_NAME}/production/manifest`,
         Key: MANIFEST,
         Body: base64data,
         ACL: 'public-read',
@@ -118,7 +124,7 @@ const uploadManifest = () => {
 
         const success = () => {
           console.log(data);
-          console.log(`${MANIFEST} uploaded`);
+          log.success(`${MANIFEST} uploaded`);
         };
         resolve(success());
       });
@@ -127,10 +133,12 @@ const uploadManifest = () => {
 };
 
 const update = async () => {
+  log.success('Starting updating');
   const list = await getFileList();
   const object = await createObject(list);
   await createFileFrom(object);
   await uploadManifest();
+  log.success('Done!');
 };
 
 module.exports = { update };
