@@ -1,5 +1,6 @@
 const AWS = require('aws-sdk');
 var { DateTime } = require('luxon');
+const fs = require('fs');
 
 const {
   POD_AWS_ACCESS_KEY_ID,
@@ -54,44 +55,46 @@ const getDateString = file => {
 };
 
 const createObject = async list => {
-  const manifest = { updated: DateTime.local().toString(), dates: [] };
+  return new Promise(resolve => {
+    const manifest = { updated: DateTime.local().toString(), dates: [] };
+    const datesArray = [];
 
-  const datesArray = [];
+    for (const url of list) {
+      const dateString = getDateString(url);
 
-  for (const url of list) {
-    const dateString = getDateString(url);
-
-    if (datesArray.includes(dateString)) {
-      const index = manifest.dates.findIndex(item => item.date === dateString);
-      manifest.dates[index].files.push({ url });
-    } else {
-      const newDate = {
-        date: dateString,
-        files: [{ url }],
-      };
-      manifest.dates.push(newDate);
-      datesArray.push(dateString);
+      if (datesArray.includes(dateString)) {
+        const index = manifest.dates.findIndex(
+          item => item.date === dateString,
+        );
+        manifest.dates[index].files.push({ url });
+      } else {
+        const newDate = {
+          date: dateString,
+          files: [{ url }],
+        };
+        manifest.dates.push(newDate);
+        datesArray.push(dateString);
+      }
     }
-  }
+    resolve(manifest);
+  });
+};
+
+const createFileFrom = object => {
+  const json = JSON.stringify(object);
+
+  fs.writeFile('./data/manifest.json', json, error => {
+    if (error) {
+      return console.error(error);
+    }
+    console.log('The file was saved!');
+  });
 };
 
 const update = async () => {
   const list = await getFileList();
-  createObject(list);
+  const object = await createObject(list);
+  createFileFrom(object);
 };
 
 module.exports = { update };
-
-// const manifest = {
-//   updated: '2018-06-20T15:12:41.049+01:00',
-//   dates: [
-//     {
-//       date: '2018-06-2017',
-//       files: [
-//         {
-//           url: 'jhksdjhkdshkds',
-//         },
-//       ],
-//     },
-//   ],
-// };
