@@ -1,0 +1,24 @@
+{
+  "defaultSeverity": "error",
+  "extends": [
+    "tslint:latest",
+    "tslint-eslint-rules",
+    "tslint-config-airbnb",
+    "tslint-plugin-prettier",
+    "tslint-config-prettier",
+    "tslint-config-security"
+  ],
+  "jsRules": {},
+  "rules": {
+    "prettier": [true, "."],
+    "no-implicit-dependencies": false,
+    "import-name": false,
+    "variable-name": [true, "allow-pascal-case"],
+    "interface-name": false,
+    "object-literal-sort-keys": false,
+    "no-submodule-imports": false,
+    "tsr-detect-html-injection": false
+  },
+  "rulesDirectory": [],
+  "lint": {}
+}
