@@ -7,6 +7,7 @@ const {
   POD_AWS_ACCESS_KEY_ID,
   POD_AWS_SECRET_ACCESS_KEY,
   POD_BUCKET_NAME,
+  POD_URL,
 } = process.env;
 
 AWS.config.update({
@@ -68,15 +69,16 @@ const createObject = async list => {
     for (const url of list) {
       const dateString = getDateString(url);
       log.message(`Processing file from date ${dateString}`);
+      const fullUrl = `${POD_URL}${url}`;
       if (datesArray.includes(dateString)) {
         const index = manifest.dates.findIndex(
           item => item.date === dateString,
         );
-        manifest.dates[index].files.push({ url });
+        manifest.dates[index].files.push({ url: fullUrl });
       } else {
         const newDate = {
           date: dateString,
-          files: [{ url }],
+          files: [{ url: fullUrl }],
         };
         manifest.dates.push(newDate);
         datesArray.push(dateString);
