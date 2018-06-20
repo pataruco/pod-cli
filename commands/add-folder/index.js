@@ -5,6 +5,7 @@ const { ExifImage } = require('exif');
 const { DateTime } = require('luxon');
 const sharp = require('sharp');
 const { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_NAME } = process.env;
+const log = require('../../lib/logger');
 
 AWS.config.update({
   accessKeyId: AWS_ACCESS_KEY_ID,
@@ -13,13 +14,23 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
+const getFiles = path => {
+  log.message('Getting images ...');
+  return fs
+    .readdirSync(path)
+    .filter(file => isImage(file))
+    .map(file => `${path}/${file}`);
+};
+
 const getDatePictureTaken = image => {
   return new Promise((resolve, reject) => {
     try {
       new ExifImage({ image }, async (_, exifData) => {
+        log.message(`Getting date from ${image}`);
         resolve(exifData.exif.DateTimeOriginal);
       });
     } catch (error) {
+      log.error(error);
       reject(error);
     }
   });
@@ -37,13 +48,6 @@ const getDate = date => {
     parseInt(timeArray[2], 10),
   );
   return newdate;
-};
-
-const getFiles = path => {
-  return fs
-    .readdirSync(path)
-    .filter(file => isImage(file))
-    .map(file => `${path}/${file}`);
 };
 
 let dates = [];
@@ -94,23 +98,31 @@ const optimiseImage = (path, imageFullPath, image) => {
 
 const uploadImage = image => {
   const fileName = image.split('/').pop();
+  return new Promise((resolve, reject) => {
+    fs.readFile(image, (err, data) => {
+      if (err) {
+        console.error(error);
+      }
 
-  fs.readFile(image, (err, data) => {
-    if (err) {
-      throw err;
-    }
-    const base64data = new Buffer.from(data, 'binary');
-    const params = {
-      Bucket: `${BUCKET_NAME}/test`,
-      Key: fileName,
-      Body: base64data,
-      ACL: 'public-read',
-    };
+      const base64data = new Buffer.from(data, 'binary');
+      const params = {
+        Bucket: `${BUCKET_NAME}/test`,
+        Key: fileName,
+        Body: base64data,
+        ACL: 'public-read',
+      };
 
-    s3.upload(params, (error, data) => {
-      error
-        ? console.log(error)
-        : console.log(data, 'Successfully uploaded package.');
+      s3.upload(params, (error, data) => {
+        if (error) {
+          reject(console.error(error));
+        }
+
+        const success = () => {
+          console.log(data);
+          log.success(`${fileName} uploaded`);
+        };
+        resolve(success());
+      });
     });
   });
 };
@@ -118,13 +130,19 @@ const uploadImage = image => {
 const uploadImages = async path => {
   const uploadPath = getUploadPath(path);
   const images = getFiles(uploadPath);
+  log.message(`Processing ${images.length} images to upload... `);
+  let counter = 0;
   for (const image of images) {
-    uploadImage(image);
+    await uploadImage(image);
+    counter++;
+    log.message(`${counter}/${images.length} images uploaded`);
   }
-  //todo: logger
+  log.success(`Process finished`);
 };
 
 const renameImagefilenames = async (path, images) => {
+  log.message(`Processing ${images.length} images... `);
+  let counter = 0;
   for (const image of images) {
     const DateTimeOriginal = await getDatePictureTaken(image);
     const date = getDate(DateTimeOriginal);
@@ -133,6 +151,8 @@ const renameImagefilenames = async (path, images) => {
     const newPathFileName = `${path}/${newFileName}`;
     fs.renameSync(image, newPathFileName);
     await optimiseImage(path, newPathFileName, newFileName);
+    counter++;
+    log.message(`${counter}/${images.length} renamed and optimised`);
   }
   uploadImages(path);
 };
