@@ -130,7 +130,7 @@ const update = async () => {
   const list = await getFileList();
   const object = await createObject(list);
   await createFileFrom(object);
-  uploadManifest();
+  await uploadManifest();
 };
 
 module.exports = { update };
