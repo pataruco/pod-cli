@@ -16,5 +16,4 @@ program
     .action(function () {
     update_1.update();
 });
-console.log('Peter');
 program.parse(process.argv);

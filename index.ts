@@ -17,6 +17,4 @@ program
     update();
   });
 
-console.log('Peter');
-
 program.parse(process.argv);
