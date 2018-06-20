@@ -12,6 +12,7 @@ Have as enviromental variables the following
 POD_AWS_ACCESS_KEY_ID # AWS access key
 POD_AWS_SECRET_ACCESS_KEY #AWS secret access key
 POD_BUCKET_NAME # name of the bucket
+POD_URL # HTTPS URL to bucket https://POD_BUCKET_NAME.s3.amazonaws.com/
 ```
 
 ## Installation
