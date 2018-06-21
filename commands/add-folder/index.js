@@ -110,7 +110,7 @@ const uploadImage = image => {
 
       const base64data = new Buffer.from(data, 'binary');
       const params = {
-        Bucket: `${POD_BUCKET_NAME}/local`,
+        Bucket: `${POD_BUCKET_NAME}/production`,
         Key: fileName,
         Body: base64data,
         ACL: 'public-read',
@@ -152,15 +152,17 @@ const deleteFolder = path => {
 const uploadImages = async path => {
   const uploadPath = getUploadPath(path);
   const images = getFiles(uploadPath);
+
   log.message(`Processing ${images.length} images to upload... `);
-  let counter = 0;
-  for (const image of images) {
-    await uploadImage(image);
-    counter++;
-    log.message(`${counter}/${images.length} images uploaded`);
-  }
-  await deleteFolder(path);
-  log.success(`Process finished`);
+
+  const toUpload = await images.map(async image => {
+    return await uploadImage(image);
+  });
+
+  return Promise.race(toUpload).then(() => {
+    deleteFolder(path);
+    log.success(`Process finished`);
+  });
 };
 
 const renameImagefilenames = async (path, images) => {
