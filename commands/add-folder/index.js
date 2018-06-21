@@ -110,7 +110,7 @@ const uploadImage = image => {
 
       const base64data = new Buffer.from(data, 'binary');
       const params = {
-        Bucket: `${POD_BUCKET_NAME}/local`,
+        Bucket: `${POD_BUCKET_NAME}/production`,
         Key: fileName,
         Body: base64data,
         ACL: 'public-read',
@@ -159,7 +159,7 @@ const uploadImages = async path => {
     return await uploadImage(image);
   });
 
-  return Promise.all(toUpload).then(() => {
+  return Promise.race(toUpload).then(() => {
     deleteFolder(path);
     log.success(`Process finished`);
   });
