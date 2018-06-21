@@ -66,7 +66,7 @@ const createObject = async list => {
     const datesArray = [];
 
     let counter = 0;
-    for (const url of list) {
+    list.forEach(url => {
       const dateString = getDateString(url);
       log.message(`Processing file from date ${dateString}`);
       const fullUrl = `${POD_URL}${url}`;
@@ -85,7 +85,7 @@ const createObject = async list => {
       }
       counter++;
       log.success(`${counter}/${list.length} files processed`);
-    }
+    });
     resolve(manifest);
   });
 };
