@@ -1,21 +1,21 @@
-const AWS = require("aws-sdk");
-const fs = require("fs");
-const log = require("../../lib/logger");
-var { DateTime } = require("luxon");
+const AWS = require('aws-sdk');
+const fs = require('fs');
+const log = require('../../lib/logger');
+var { DateTime } = require('luxon');
 
 const {
   POD_AWS_ACCESS_KEY_ID,
   POD_AWS_SECRET_ACCESS_KEY,
   POD_BUCKET_NAME,
-  POD_URL
+  POD_URL,
 } = process.env;
 
 AWS.config.update({
   accessKeyId: POD_AWS_ACCESS_KEY_ID,
-  secretAccessKey: POD_AWS_SECRET_ACCESS_KEY
+  secretAccessKey: POD_AWS_SECRET_ACCESS_KEY,
 });
 
-const MANIFEST = "manifest.json";
+const MANIFEST = 'manifest.json';
 const MANIFEST_PATH = `./data/${MANIFEST}`;
 
 const dateregex = /([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))/gm;
@@ -28,9 +28,9 @@ function getFileList() {
   return new Promise((resolve, reject) => {
     let params = {
       Bucket: `${POD_BUCKET_NAME}`,
-      Delimiter: "/",
-      Prefix: "production/",
-      MaxKeys: 1000
+      Delimiter: '/',
+      Prefix: 'production/',
+      MaxKeys: 1000,
     };
 
     s3.listObjectsV2(params, (err, data) => {
@@ -48,7 +48,7 @@ function getFileList() {
         contents.forEach(content => {
           allKeys.push(content.Key);
         });
-        log.success("Retrieve all files from S3");
+        log.success('Retrieve all files from S3');
         return allKeys;
       };
       resolve(success());
@@ -57,7 +57,10 @@ function getFileList() {
 }
 
 const getDateString = file => {
-  return file.match(dateregex)[0];
+  if (file) {
+    console.log(file);
+    return file.match(dateregex)[0];
+  }
 };
 
 const createObject = async list => {
@@ -72,13 +75,13 @@ const createObject = async list => {
       const fullUrl = `${url}`;
       if (datesArray.includes(dateString)) {
         const index = manifest.dates.findIndex(
-          item => item.date === dateString
+          item => item.date === dateString,
         );
         manifest.dates[index].files.push({ url: fullUrl });
       } else {
         const newDate = {
           date: dateString,
-          files: [{ url: fullUrl }]
+          files: [{ url: fullUrl }],
         };
         manifest.dates.push(newDate);
         datesArray.push(dateString);
@@ -91,7 +94,7 @@ const createObject = async list => {
 };
 
 const createFileFrom = object => {
-  log.message("Creating file to upload");
+  log.message('Creating file to upload');
   const json = JSON.stringify(object);
 
   return new Promise((resolve, reject) => {
@@ -99,7 +102,7 @@ const createFileFrom = object => {
       if (error) {
         reject(console.error(error));
       }
-      resolve(log.success("The file was saved!"));
+      resolve(log.success('The file was saved!'));
     });
   });
 };
@@ -111,12 +114,12 @@ const uploadManifest = () => {
         console.error(error);
       }
 
-      const base64data = new Buffer.from(data, "binary");
+      const base64data = new Buffer.from(data, 'binary');
       const params = {
         Bucket: `${POD_BUCKET_NAME}/production/manifest`,
         Key: MANIFEST,
         Body: base64data,
-        ACL: "public-read"
+        ACL: 'public-read',
       };
 
       s3.upload(params, (error, data) => {
@@ -135,12 +138,12 @@ const uploadManifest = () => {
 };
 
 const update = async () => {
-  log.success("Starting updating");
+  log.success('Starting updating');
   const list = await getFileList();
   const object = await createObject(list);
   await createFileFrom(object);
   await uploadManifest();
-  log.success("Done!");
+  log.success('Done!');
 };
 
 module.exports = { update };

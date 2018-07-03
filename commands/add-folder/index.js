@@ -1,25 +1,25 @@
-const AWS = require("aws-sdk");
-const fs = require("fs");
-const isImage = require("is-image");
-const { ExifImage } = require("exif");
-const { DateTime } = require("luxon");
-const sharp = require("sharp");
+const AWS = require('aws-sdk');
+const fs = require('fs');
+const isImage = require('is-image');
+const { ExifImage } = require('exif');
+const { DateTime } = require('luxon');
+const sharp = require('sharp');
 const {
   POD_AWS_ACCESS_KEY_ID,
   POD_AWS_SECRET_ACCESS_KEY,
-  POD_BUCKET_NAME
+  POD_BUCKET_NAME,
 } = process.env;
-const log = require("../../lib/logger");
+const log = require('../../lib/logger');
 
 AWS.config.update({
   accessKeyId: POD_AWS_ACCESS_KEY_ID,
-  secretAccessKey: POD_AWS_SECRET_ACCESS_KEY
+  secretAccessKey: POD_AWS_SECRET_ACCESS_KEY,
 });
 
 const s3 = new AWS.S3();
 
 const getFiles = path => {
-  log.message("Getting images ...");
+  log.message('Getting images ...');
   return fs
     .readdirSync(path)
     .filter(file => isImage(file))
@@ -41,15 +41,15 @@ const getDatePictureTaken = image => {
 };
 
 const getDate = date => {
-  const dateArray = date.split(" ")[0].split(":");
-  const timeArray = date.split(" ")[1].split(":");
+  const dateArray = date.split(' ')[0].split(':');
+  const timeArray = date.split(' ')[1].split(':');
   const newdate = DateTime.local(
     parseInt(dateArray[0], 10),
     parseInt(dateArray[1], 10),
     parseInt(dateArray[2], 10),
     parseInt(timeArray[0], 10),
     parseInt(timeArray[1], 10),
-    parseInt(timeArray[2], 10)
+    parseInt(timeArray[2], 10),
   );
   return newdate;
 };
@@ -57,7 +57,7 @@ const getDate = date => {
 let dates = [];
 let counter = 1;
 const getNewFileName = (date, fileExtension) => {
-  const dateString = `${date.year}-${date.month}-${date.day}`;
+  const dateString = date.toISODate();
 
   if (dates.includes(dateString)) {
     counter++;
@@ -101,19 +101,19 @@ const optimiseImage = (path, imageFullPath, image) => {
 };
 
 const uploadImage = image => {
-  const fileName = image.split("/").pop();
+  const fileName = image.split('/').pop();
   return new Promise((resolve, reject) => {
     fs.readFile(image, (err, data) => {
       if (err) {
         console.error(error);
       }
 
-      const base64data = new Buffer.from(data, "binary");
+      const base64data = new Buffer.from(data, 'binary');
       const params = {
         Bucket: `${POD_BUCKET_NAME}/production`,
         Key: fileName,
         Body: base64data,
-        ACL: "public-read"
+        ACL: 'public-read',
       };
 
       s3.upload(params, (error, data) => {
@@ -136,7 +136,7 @@ const deleteFolder = path => {
     const success = () => {
       if (fs.existsSync(path)) {
         fs.readdirSync(path).forEach(file => {
-          const curPath = path + "/" + file;
+          const curPath = path + '/' + file;
           fs.lstatSync(curPath).isDirectory()
             ? deleteFolder(curPath)
             : fs.unlinkSync(curPath);
