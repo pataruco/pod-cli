@@ -41,23 +41,14 @@ const getDatePictureTaken = image => {
 };
 
 const getDate = date => {
-  const dateArray = date.split(' ')[0].split(':');
-  const timeArray = date.split(' ')[1].split(':');
-  const newdate = DateTime.local(
-    parseInt(dateArray[0], 10),
-    parseInt(dateArray[1], 10),
-    parseInt(dateArray[2], 10),
-    parseInt(timeArray[0], 10),
-    parseInt(timeArray[1], 10),
-    parseInt(timeArray[2], 10),
-  );
-  return newdate;
+  const format = 'yyyy:MM:dd hh:mm:ss';
+  return DateTime.fromFormat(date, format);
 };
 
 let dates = [];
 let counter = 1;
 const getNewFileName = (date, fileExtension) => {
-  const dateString = date.toISODate();
+  const dateString = date.toFormat('yyyy-MM-dd');
 
   if (dates.includes(dateString)) {
     counter++;
@@ -172,7 +163,7 @@ const renameImagefilenames = async (path, images) => {
     const DateTimeOriginal = await getDatePictureTaken(image);
     const date = getDate(DateTimeOriginal);
     const fileExtension = getfileExtension(image);
-    newFileName = getNewFileName(date, fileExtension);
+    const newFileName = getNewFileName(date, fileExtension);
     const newPathFileName = `${path}/${newFileName}`;
     fs.renameSync(image, newPathFileName);
     await optimiseImage(path, newPathFileName, newFileName);
