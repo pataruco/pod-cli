@@ -16,6 +16,6 @@
   },
   "preferGlobal": true,
   "bin": {
-    "pod": "index.js"
+    "pod": "./index.js"
   }
 }
